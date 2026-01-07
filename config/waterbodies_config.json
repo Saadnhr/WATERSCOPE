@@ -1,0 +1,53 @@
+[
+  {
+    "waterbody_id": "lake_aral_001",
+    "name": "Lake Aral",
+    "description": "Endorheic lake in Central Asia, famous for shrinking",
+    "region": "Central Asia",
+    "country": "Kazakhstan/Uzbekistan",
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [[
+        [58.5, 45.0],
+        [59.5, 45.0],
+        [59.5, 46.0],
+        [58.5, 46.0],
+        [58.5, 45.0]
+      ]]
+    }
+  },
+  {
+    "waterbody_id": "lake_chad_001",
+    "name": "Lake Chad",
+    "description": "Endorheic freshwater lake in Africa",
+    "region": "Africa",
+    "country": "Chad/Cameroon/Nigeria/Niger",
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [[
+        [13.0, 12.5],
+        [14.5, 12.5],
+        [14.5, 14.0],
+        [13.0, 14.0],
+        [13.0, 12.5]
+      ]]
+    }
+  },
+  {
+    "waterbody_id": "lake_mead_001",
+    "name": "Lake Mead",
+    "description": "Largest reservoir in the United States by volume",
+    "region": "North America",
+    "country": "United States",
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [[
+        [-114.7, 36.0],
+        [-114.3, 36.0],
+        [-114.3, 36.5],
+        [-114.7, 36.5],
+        [-114.7, 36.0]
+      ]]
+    }
+  }
+]

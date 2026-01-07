@@ -7,6 +7,10 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+import urllib3
+
+# Désactiver les warnings SSL
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 load_dotenv()
 
@@ -17,39 +21,63 @@ class WaterScopeESClient:
     INDEX_NAME = "waterbody_stats"
     
     def __init__(self, host: Optional[str] = None):
+        """
+        Initialize Elasticsearch client
+        
+        Args:
+            host: Elasticsearch host URL (or set ELASTICSEARCH_HOST env var)
+        """
         self.host = host or os.getenv('ELASTICSEARCH_HOST', 'http://localhost:9200')
-        self.es = Elasticsearch([self.host])
         
-        # Check connection
-        if not self.es.ping():
-            raise Exception(f"Cannot connect to Elasticsearch at {self.host}")
+        # Configuration pour Elasticsearch 8.x sans sécurité
+        self.es = Elasticsearch(
+            [self.host],
+            verify_certs=False,
+            ssl_show_warn=False,
+            request_timeout=30
+        )
         
-        print(f"✅ Connected to Elasticsearch at {self.host}")
+        # Check connection avec retry
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                if self.es.ping():
+                    print(f"✅ Connected to Elasticsearch at {self.host}")
+                    break
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    raise Exception(f"Cannot connect to Elasticsearch at {self.host}. Error: {e}")
+                print(f"Attempt {attempt + 1}/{max_retries} failed, retrying...")
+                import time
+                time.sleep(2)
         
         # Create index if it doesn't exist
         self._ensure_index_exists()
     
     def _ensure_index_exists(self):
         """Create the waterbody_stats index if it doesn't exist"""
-        if not self.es.indices.exists(index=self.INDEX_NAME):
-            mapping = {
-                "mappings": {
-                    "properties": {
-                        "waterbody_id": {"type": "keyword"},
-                        "name": {"type": "text"},
-                        "timestamp": {"type": "date"},
-                        "surface_area_hectares": {"type": "float"},
-                        "data_source": {"type": "keyword"},
-                        "cloud_cover_percentage": {"type": "float"},
-                        "geo_shape": {"type": "geo_shape"}
+        try:
+            if not self.es.indices.exists(index=self.INDEX_NAME):
+                mapping = {
+                    "mappings": {
+                        "properties": {
+                            "waterbody_id": {"type": "keyword"},
+                            "name": {"type": "text"},
+                            "timestamp": {"type": "date"},
+                            "surface_area_hectares": {"type": "float"},
+                            "data_source": {"type": "keyword"},
+                            "cloud_cover_percentage": {"type": "float"},
+                            "geo_shape": {"type": "geo_shape"}
+                        }
                     }
                 }
-            }
-            
-            self.es.indices.create(index=self.INDEX_NAME, body=mapping)
-            print(f"✅ Created index: {self.INDEX_NAME}")
-        else:
-            print(f"✅ Index {self.INDEX_NAME} already exists")
+                
+                self.es.indices.create(index=self.INDEX_NAME, body=mapping)
+                print(f"✅ Created index: {self.INDEX_NAME}")
+            else:
+                print(f"✅ Index {self.INDEX_NAME} already exists")
+        except Exception as e:
+            print(f"Warning: Could not create index: {e}")
     
     def index_waterbody_stat(self, document: Dict[str, Any]) -> str:
         """Index a single waterbody statistic document"""
