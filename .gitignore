@@ -1,1 +1,51 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.pytest_cache/
+
+# Environment
 .env
+.env.local
+.env.*.local
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-*
+
+# Data
+data/logs/
+data/cache/
+*.log
+
+# Elasticsearch
+es_data/
+
+# Coverage
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Documentation temporaire
+docs/*.tmp
+docs/*.bak
+
+# Screenshots (optionnel - à commiter si tu veux)
+# docs/screenshots/
