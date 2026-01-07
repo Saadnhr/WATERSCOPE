@@ -1,23 +1,110 @@
-# Core dependencies
+# WaterScope - Requirements
+# Python 3.11+
+# Generated: January 2026
+
+# ============================================================================
+# CORE DEPENDENCIES
+# ============================================================================
+
+# HTTP Requests
 requests>=2.31.0
+
+# Environment Variables
 python-dotenv>=1.0.0
 
-# Elasticsearch 
-elasticsearch>=8.0.0
-
-# API Framework
-fastapi>=0.100.0
-uvicorn>=0.23.0
-pydantic>=2.0.0
-
-# Testing
-pytest>=7.4.0
-pytest-cov>=4.1.0
-pytest-mock>=3.12.0
-
-# Data processing
+# Date/Time Utilities
 python-dateutil>=2.8.0
 
-# Utilities
+
+# ============================================================================
+# ELASTICSEARCH & SEARCH
+# ============================================================================
+
+# Elasticsearch Client (CRITICAL: Must be 8.11.x for compatibility)
+elasticsearch==8.11.1
+
+# URL parsing for Elasticsearch
+urllib3>=2.0.0
+
+
+# ============================================================================
+# API FRAMEWORK (Phase 2 - Optional for Phase 1)
+# ============================================================================
+
+# FastAPI Framework
+fastapi>=0.100.0
+
+# ASGI Server for FastAPI
+uvicorn>=0.23.0
+
+# Data Validation
+pydantic>=2.0.0
+
+
+# ============================================================================
+# TESTING
+# ============================================================================
+
+# Testing Framework
+pytest>=7.4.0
+
+# Code Coverage
+pytest-cov>=4.1.0
+
+# Mock Objects for Testing
+pytest-mock>=3.12.0
+
+# Async Testing
+pytest-anyio>=0.0.0
+
+
+# ============================================================================
+# SCHEDULING & AUTOMATION
+# ============================================================================
+
+# Job Scheduling
+schedule>=1.2.0
+
+
+# ============================================================================
+# RETRY & ERROR HANDLING
+# ============================================================================
+
+# Retry Logic
 tenacity>=8.2.0
 
+
+# ============================================================================
+# DEVELOPMENT TOOLS (Optional)
+# ============================================================================
+
+# Code Formatting (Optional)
+# black>=23.0.0
+
+# Code Linting (Optional)
+# pylint>=3.0.0
+
+# Type Checking (Optional)
+# mypy>=1.5.0
+
+
+# ============================================================================
+# NOTES
+# ============================================================================
+# 
+# Installation:
+#   pip install -r requirements.txt
+#
+# For development:
+#   pip install -r requirements.txt black pylint mypy
+#
+# Tested on:
+#   - Python 3.11.0+
+#   - Python 3.12.0+
+#   - Python 3.13.0+
+#
+# Platform compatibility:
+#   - Windows 10/11 ✅
+#   - macOS ✅
+#   - Linux (Ubuntu 20.04+) ✅
+#
