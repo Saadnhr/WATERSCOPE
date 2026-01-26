@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WaterScope Dashboard - Surveillance des Masses d'Eau</title>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-label {
+            color: #999;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .charts-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .chart-title {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .waterbody-selector {
+            margin-bottom: 20px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        select:hover, select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .risk-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .risk-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid #667eea;
+        }
+
+        .risk-card.low { border-left-color: #4caf50; }
+        .risk-card.medium { border-left-color: #ff9800; }
+        .risk-card.high { border-left-color: #ff5722; }
+        .risk-card.critical { border-left-color: #f44336; }
+
+        .risk-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .risk-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .risk-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            color: white;
+        }
+
+        .risk-badge.low { background: #4caf50; }
+        .risk-badge.medium { background: #ff9800; }
+        .risk-badge.high { background: #ff5722; }
+        .risk-badge.critical { background: #f44336; }
+
+        .risk-details {
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: white;
+            font-size: 1.5em;
+        }
+
+        .error {
+            background: #f44336;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 50px;
+            padding: 20px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-indicator.healthy { background: #4caf50; }
+        .status-indicator.degraded { background: #ff9800; }
+        .status-indicator.offline { background: #f44336; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>🌊 WaterScope Dashboard</h1>
+            <p class="subtitle">Surveillance en Temps Réel des Masses d'Eau par Satellite</p>
+            <p class="subtitle" id="status-text">
+                <span class="status-indicator healthy"></span>
+                Système opérationnel
+            </p>
+        </header>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🌍</div>
+                <div class="stat-label">Lacs Surveillés</div>
+                <div class="stat-value" id="total-waterbodies">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-label">Mesures Totales</div>
+                <div class="stat-value" id="total-measurements">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🚨</div>
+                <div class="stat-label">Alertes Sécheresse</div>
+                <div class="stat-value" id="drought-alerts">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📅</div>
+                <div class="stat-label">Dernière Mise à Jour</div>
+                <div class="stat-value" id="last-update" style="font-size: 1.2em;">-</div>
+            </div>
+        </div>
+
+        <!-- Waterbody Selector -->
+        <div class="chart-card">
+            <div class="waterbody-selector">
+                <label for="waterbody-select" style="display: block; margin-bottom: 10px; font-weight: 600; color: #333;">
+                    Sélectionner un lac :
+                </label>
+                <select id="waterbody-select" onchange="loadWaterbodyData()">
+                    <option value="">Chargement...</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-section">
+            <div class="chart-card">
+                <h3 class="chart-title">📈 Évolution de la Surface (12 derniers mois)</h3>
+                <canvas id="timeseriesChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3 class="chart-title">📊 Comparaison des Lacs</h3>
+                <canvas id="comparisonChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Drought Risk Cards -->
+        <h2 style="color: white; margin: 30px 0 20px 0; text-align: center; font-size: 2em;">
+            🚨 Analyse des Risques de Sécheresse
+        </h2>
+        <div class="risk-cards" id="risk-cards">
+            <div class="loading">Chargement des analyses...</div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p>🌊 WaterScope - Projet B3 AI - IPSA Paris</p>
+            <p>Données : ESA Copernicus Sentinel-2 | NDWI Analysis</p>
+            <p>© 2026 NHARI SAAD - Tous droits réservés</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script>
+        // Initialize dashboard
+        let timeseriesChart = null;
+        let comparisonChart = null;
+        let selectedWaterbody = null;
+
+        // Load initial data
+        document.addEventListener('DOMContentLoaded', function() {
+            checkHealth();
+            loadStats();
+            loadWaterbodies();
+            loadComparison();
+            loadDroughtRisk();
+            
+            // Refresh every 5 minutes
+            setInterval(() => {
+                loadStats();
+                if (selectedWaterbody) {
+                    loadWaterbodyData();
+                }
+                loadComparison();
+                loadDroughtRisk();
+            }, 300000);
+        });
+
+        // Check system health
+        async function checkHealth() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                
+                const statusText = document.getElementById('status-text');
+                const indicator = statusText.querySelector('.status-indicator');
+                
+                if (data.fastapi === 'healthy' || data.fastapi === 'offline') {
+                    if (data.fastapi === 'offline') {
+                        indicator.className = 'status-indicator degraded';
+                        statusText.innerHTML = '<span class="status-indicator degraded"></span>API hors ligne - Dashboard en mode démo';
+                    } else {
+                        indicator.className = 'status-indicator healthy';
+                        statusText.innerHTML = '<span class="status-indicator healthy"></span>Système opérationnel';
+                    }
+                }
+            } catch (error) {
+                console.error('Health check failed:', error);
+            }
+        }
+
+        // Load system statistics
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                
+                document.getElementById('total-waterbodies').textContent = data.unique_waterbodies || 0;
+                document.getElementById('total-measurements').textContent = data.total_documents || 0;
+                
+                if (data.newest_measurement) {
+                    const date = new Date(data.newest_measurement);
+                    document.getElementById('last-update').textContent = date.toLocaleDateString('fr-FR');
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load waterbodies list
+        async function loadWaterbodies() {
+            try {
+                const response = await fetch('/api/waterbodies');
+                const waterbodies = await response.json();
+                
+                const select = document.getElementById('waterbody-select');
+                select.innerHTML = '<option value="">-- Sélectionner un lac --</option>';
+                
+                waterbodies.forEach(id => {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = formatWaterbodyName(id);
+                    select.appendChild(option);
+                });
+                
+                // Select first waterbody
+                if (waterbodies.length > 0) {
+                    select.value = waterbodies[0];
+                    selectedWaterbody = waterbodies[0];
+                    loadWaterbodyData();
+                }
+            } catch (error) {
+                console.error('Error loading waterbodies:', error);
+            }
+        }
+
+        // Load waterbody data
+        async function loadWaterbodyData() {
+            selectedWaterbody = document.getElementById('waterbody-select').value;
+            if (!selectedWaterbody) return;
+            
+            try {
+                const response = await fetch(`/api/waterbody/${selectedWaterbody}/timeseries?months=12`);
+                const data = await response.json();
+                
+                renderTimeseriesChart(data);
+            } catch (error) {
+                console.error('Error loading waterbody data:', error);
+            }
+        }
+
+        // Render timeseries chart
+        function renderTimeseriesChart(data) {
+            const ctx = document.getElementById('timeseriesChart');
+            
+            if (timeseriesChart) {
+                timeseriesChart.destroy();
+            }
+            
+            const labels = data.data_points.map(p => new Date(p.timestamp).toLocaleDateString('fr-FR'));
+            const values = data.data_points.map(p => p.surface_area_hectares);
+            
+            timeseriesChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: data.name,
+                        data: values,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        title: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Surface (hectares)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load comparison
+        async function loadComparison() {
+            try {
+                const response = await fetch('/api/comparison');
+                const data = await response.json();
+                
+                renderComparisonChart(data);
+            } catch (error) {
+                console.error('Error loading comparison:', error);
+            }
+        }
+
+        // Render comparison chart
+        function renderComparisonChart(data) {
+            const ctx = document.getElementById('comparisonChart');
+            
+            if (comparisonChart) {
+                comparisonChart.destroy();
+            }
+            
+            const labels = data.waterbodies.map(w => formatWaterbodyName(w.waterbody_id));
+            const values = data.waterbodies.map(w => w.surface_area_hectares);
+            
+            comparisonChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Surface (hectares)',
+                        data: values,
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(118, 75, 162, 0.8)',
+                            'rgba(237, 100, 166, 0.8)'
+                        ],
+                        borderColor: [
+                            '#667eea',
+                            '#764ba2',
+                            '#ed64a6'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Surface (hectares)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load drought risk
+        async function loadDroughtRisk() {
+            try {
+                const response = await fetch('/api/drought-risk');
+                const risks = await response.json();
+                
+                renderDroughtRiskCards(risks);
+                
+                // Count alerts
+                const alerts = risks.filter(r => r.risk_level === 'HIGH' || r.risk_level === 'CRITICAL').length;
+                document.getElementById('drought-alerts').textContent = alerts;
+            } catch (error) {
+                console.error('Error loading drought risk:', error);
+                document.getElementById('risk-cards').innerHTML = '<div class="error">Erreur de chargement des analyses</div>';
+            }
+        }
+
+        // Render drought risk cards
+        function renderDroughtRiskCards(risks) {
+            const container = document.getElementById('risk-cards');
+            
+            if (risks.length === 0) {
+                container.innerHTML = '<div class="loading">Aucune donnée disponible</div>';
+                return;
+            }
+            
+            container.innerHTML = risks.map(risk => `
+                <div class="risk-card ${risk.risk_level.toLowerCase()}">
+                    <div class="risk-header">
+                        <div class="risk-name">${risk.name}</div>
+                        <div class="risk-badge ${risk.risk_level.toLowerCase()}">${risk.risk_level}</div>
+                    </div>
+                    <div class="risk-details">
+                        <p><strong>Surface actuelle:</strong> ${risk.current_area_hectares.toFixed(2)} ha</p>
+                        <p><strong>Variation:</strong> ${risk.percentage_change > 0 ? '+' : ''}${risk.percentage_change.toFixed(2)}%</p>
+                        <p><strong>Tendance:</strong> ${risk.trend === 'DECLINING' ? '📉 Déclin' : risk.trend === 'INCREASING' ? '📈 Croissance' : '➡️ Stable'}</p>
+                        <p><strong>Dernière mesure:</strong> ${new Date(risk.last_updated).toLocaleDateString('fr-FR')}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Format waterbody name
+        function formatWaterbodyName(id) {
+            const names = {
+                'lake_aral_001': '🌊 Lake Aral',
+                'lake_chad_001': '🌊 Lake Chad',
+                'lake_mead_001': '🌊 Lake Mead'
+            };
+            return names[id] || id;
+        }
+    </script>
+</body>
+</html>

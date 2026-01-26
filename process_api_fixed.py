@@ -25,7 +25,7 @@ class ProcessAPIClient:
         self.auth = auth
         print("Process API Client initialized")
     
-    def calculate_water_surface_area(
+    def calculate_water_surface(
         self,
         waterbody_id: str,
         geometry: Dict[str, Any],
@@ -226,11 +226,10 @@ class ProcessAPIClient:
                 
                 # Extract and read the TIFF
                 tiff_file = tar.extractfile(tiff_member)
-                tiff_bytes = BytesIO(tiff_file.read())
-                img = Image.open(tiff_bytes)
+                img = Image.open(tiff_file)
                 
                 # Convert to numpy array
-                img_array = np.asarray(img, dtype=np.uint8)
+                img_array = np.array(img)
                 
                 # Count water pixels (value = 1)
                 water_pixels = np.sum(img_array == 1)

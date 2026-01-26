@@ -79,18 +79,18 @@ class IngestionService:
         try:
             # Fetch data from Sentinel Hub
             result = self.process_client.calculate_water_surface_area(
-                geometry=geometry,
-                time_range=(start_date, end_date),
                 waterbody_id=waterbody_id,
-                waterbody_name=waterbody_name
+                geometry=geometry,
+                start_date=start_date.strftime("%Y-%m-%d"),
+                end_date=end_date.strftime("%Y-%m-%d")
             )
             
             # Store in Elasticsearch
             doc = {
                 "waterbody_id": waterbody_id,
                 "name": waterbody_name,
-                "timestamp": datetime.now().isoformat(),
-                "surface_area_hectares": 0.0,  # Will be calculated from response
+                "timestamp": result.get("timestamp", datetime.now().isoformat()),
+                "surface_area_hectares": result.get("surface_area_hectares", 0.0),
                 "data_source": "Sentinel-2",
                 "geo_shape": geometry,
                 "ingestion_date": datetime.now().isoformat()
@@ -104,6 +104,7 @@ class IngestionService:
                 "waterbody_id": waterbody_id,
                 "status": "success",
                 "document_id": doc_id,
+                "surface_area": result.get("surface_area_hectares", 0.0),
                 "timestamp": datetime.now().isoformat()
             }
             

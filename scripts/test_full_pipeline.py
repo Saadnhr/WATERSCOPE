@@ -32,7 +32,7 @@ print("\n2. Lancement de l'ingestion...")
 config_path = "config/waterbodies_config.json"
 
 try:
-    summary = service.ingest_all(config_path, months_back=1)
+    summary = service.ingest_all(config_path, months_back=7)
     
     print("\n" + "="*60)
     print("RESULTAT FINAL")
